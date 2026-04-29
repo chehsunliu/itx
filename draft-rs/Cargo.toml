@@ -1,0 +1,8 @@
+[workspace]
+resolver = "3"
+members = [
+    "draft-backend",
+    "draft-contract",
+    "draft-impl",
+    "draft-worker",
+]
