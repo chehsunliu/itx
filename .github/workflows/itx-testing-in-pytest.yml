@@ -37,6 +37,10 @@ jobs:
           echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
           echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
 
+      - name: Check Rust formatting
+        working-directory: itx-rs
+        run: cargo fmt --all -- --check
+
       - name: Build binaries
         working-directory: itx-rs
         run: cargo build
@@ -71,6 +75,16 @@ jobs:
         with:
           go-version-file: itx-go/itx-backend/go.mod
           cache-dependency-path: itx-go/itx-backend/go.sum
+
+      - name: Check Go formatting
+        working-directory: itx-go
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Unformatted Go files:"
+            echo "$unformatted"
+            exit 1
+          fi
 
       - name: Build binaries
         working-directory: itx-go

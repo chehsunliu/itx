@@ -94,7 +94,11 @@ async fn fetch_tags_for(
 #[async_trait]
 impl PostRepo for MariaDbPostRepo {
     async fn list(&self, params: ListParams) -> Result<Vec<Post>, RepoError> {
-        let limit = if params.limit == 0 { 50 } else { params.limit as i64 };
+        let limit = if params.limit == 0 {
+            50
+        } else {
+            params.limit as i64
+        };
         let offset = params.offset as i64;
 
         let rows: Vec<(PostId, String, String, String, time::OffsetDateTime)> =
@@ -139,13 +143,12 @@ impl PostRepo for MariaDbPostRepo {
     }
 
     async fn get(&self, params: GetParams) -> Result<Post, RepoError> {
-        let row: Option<(PostId, String, String, String, time::OffsetDateTime)> = sqlx::query_as(
-            "SELECT id, author_id, title, body, created_at FROM posts WHERE id = ?",
-        )
-        .bind(params.id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(err)?;
+        let row: Option<(PostId, String, String, String, time::OffsetDateTime)> =
+            sqlx::query_as("SELECT id, author_id, title, body, created_at FROM posts WHERE id = ?")
+                .bind(params.id)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(err)?;
 
         let Some((id, author_str, title, body, created_at)) = row else {
             return Err(RepoError::NotFound);

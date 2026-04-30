@@ -48,12 +48,14 @@ async fn link_post_tags(
     tag_ids: &[i64],
 ) -> Result<(), RepoError> {
     for tid in tag_ids {
-        sqlx::query("INSERT INTO post_tags (post_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
-            .bind(post_id)
-            .bind(tid)
-            .execute(&mut **tx)
-            .await
-            .map_err(err)?;
+        sqlx::query(
+            "INSERT INTO post_tags (post_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        )
+        .bind(post_id)
+        .bind(tid)
+        .execute(&mut **tx)
+        .await
+        .map_err(err)?;
     }
     Ok(())
 }
@@ -86,7 +88,11 @@ async fn fetch_tags_for(
 #[async_trait]
 impl PostRepo for PostgresPostRepo {
     async fn list(&self, params: ListParams) -> Result<Vec<Post>, RepoError> {
-        let limit = if params.limit == 0 { 50 } else { params.limit as i64 };
+        let limit = if params.limit == 0 {
+            50
+        } else {
+            params.limit as i64
+        };
         let offset = params.offset as i64;
 
         let rows: Vec<(PostId, AuthorId, String, String, time::OffsetDateTime)> =
@@ -130,14 +136,13 @@ impl PostRepo for PostgresPostRepo {
     }
 
     async fn get(&self, params: GetParams) -> Result<Post, RepoError> {
-        let row: Option<(PostId, AuthorId, String, String, time::OffsetDateTime)> =
-            sqlx::query_as(
-                "SELECT id, author_id, title, body, created_at FROM posts WHERE id = $1",
-            )
-            .bind(params.id)
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(err)?;
+        let row: Option<(PostId, AuthorId, String, String, time::OffsetDateTime)> = sqlx::query_as(
+            "SELECT id, author_id, title, body, created_at FROM posts WHERE id = $1",
+        )
+        .bind(params.id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(err)?;
 
         let Some((id, author_id, title, body, created_at)) = row else {
             return Err(RepoError::NotFound);
