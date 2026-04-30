@@ -55,10 +55,10 @@ jobs:
         run: cargo build
 
       - name: Start containers
-        run: docker-compose up -d
+        run: docker compose up -d
 
       - name: Wait for init services
-        run: docker-compose wait ${{ matrix.docker-init-services }}
+        run: docker compose wait ${{ matrix.docker-init-services }}
 
       - name: Run integration tests
         timeout-minutes: 5
@@ -67,7 +67,7 @@ jobs:
           ITX_TEST_PROFILE: ${{ matrix.profile }}
 
       - name: Shutdown containers
-        run: docker-compose down --remove-orphans -v --timeout 5 || true
+        run: docker compose down --remove-orphans -v --timeout 5 || true
 
   golang-integration-test:
     runs-on: ubuntu-latest
