@@ -70,6 +70,7 @@ jobs:
         run: docker compose down --remove-orphans -v --timeout 5 || true
 
   golang-integration-test:
+    name: golang-integration-test (${{ matrix.profile }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
