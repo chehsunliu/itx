@@ -1,5 +1,7 @@
 # Draft
 
+[![Draft Testing in Pytest](https://github.com/chehsunliu/draft/actions/workflows/draft-testing-in-pytest.yml/badge.svg)](https://github.com/chehsunliu/draft/actions/workflows/draft-testing-in-pytest.yml)
+
 A demonstration project for performing integration testing on multi-module backend systems using **Vitest** and **Pytest** as test runners.
 
 The project is designed to support multiple backend languages behind a shared API spec. For now, the implementations are **Go (Gin)** and **Rust (Axum)**; more may be added later.
@@ -11,73 +13,33 @@ The project is designed to support multiple backend languages behind a shared AP
 - Demonstrate swappable infrastructure (databases, message queues, caches) behind interfaces, so the backend and worker code does not depend on a concrete implementation.
 - Run the full matrix in GitHub Actions with real services spun up as containers — not mocks.
 
-## Architecture
+## Development
 
-Each language has its own workspace (`draft-go/`, `draft-rs/`, ...), and each workspace is split into two modules:
+The pytest integration suite picks which backend to build and run via the `DRAFT_LANG` env var (`rust` by default, or `golang`). The fixtures handle building the binary and starting/stopping the server — you don't need to run anything in `draft-rs/` or `draft-go/` yourself.
 
-- **backend** — HTTP API server. Receives client requests, reads/writes to the database and cache, publishes messages to a queue.
-- **worker** — Consumes messages from the queue, performs background work, reads/writes to the database and cache.
+Prerequisites:
 
-A typical request flow:
+- Python 3.14 + [`uv`](https://docs.astral.sh/uv/)
+- Rust toolchain (stable) — for `DRAFT_LANG=rust`
+- Go (version in `draft-go/draft-backend/go.mod`) — for `DRAFT_LANG=golang`
 
-```
-client -> backend -> (db / cache) -> queue -> worker -> (db / cache)
-```
+One-time setup:
 
-Both backend and worker depend on **interfaces** for their infrastructure dependencies. Concrete implementations (e.g. MariaDB vs. Postgres, RabbitMQ vs. SQS) are wired in at startup and are invisible to business logic.
-
-## Layout
-
-```
-.
-├── draft-go/             # Go workspace
-│   ├── backend/          # gin HTTP server
-│   ├── worker/           # queue consumer
-│   └── core/             # shared interfaces, domain types
-├── draft-rs/             # Rust workspace
-│   ├── backend/          # axum HTTP server
-│   ├── worker/           # queue consumer
-│   └── core/             # shared interfaces, domain types
-├── tests/
-│   ├── vitest/           # TypeScript integration suite
-│   └── pytest/           # Python integration suite
-└── .github/workflows/
+```sh
+cd integration-tests/pytest
+uv sync
 ```
 
-Additional language workspaces (e.g. `draft-py/`, `draft-ts/`) can be added later following the same convention.
+Run the suite against the rust backend (default):
 
-## Infrastructure choices
+```sh
+make test
+# or, explicitly:
+DRAFT_LANG=rust make test
+```
 
-| Concern   | Options           |
-|-----------|-------------------|
-| Database  | MariaDB, Postgres |
-| Queue     | RabbitMQ, SQS     |
-| Cache     | Redis             |
+Run the same suite against the go backend:
 
-Each implementation lives behind the same interface, so any combination is valid.
-
-## API spec
-
-All backend implementations expose **the same HTTP API** — same routes, same request/response shapes, same status codes. The integration test suites are written once per runner and run against any implementation.
-
-## CI matrix
-
-GitHub Actions runs integration tests across selected combinations of:
-
-- test runner: `vitest` | `pytest`
-- backend language: `go` | `rust` (more in the future)
-- database: `mariadb` | `postgres`
-- queue: `rabbitmq` | `sqs`
-- cache: `redis`
-
-Example flows:
-
-1. `vitest + mariadb + rabbitmq + redis + rust`
-2. `pytest + postgres + sqs + redis + go`
-3. `vitest + postgres + rabbitmq + redis + rust`
-
-Not every combination is exercised — the matrix picks a representative subset.
-
-## Status
-
-Early scaffolding. Nothing implemented yet.
+```sh
+DRAFT_LANG=golang make test
+```
