@@ -1,11 +1,14 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import Iterator
+from typing import AsyncGenerator, Iterator
 
 import pytest
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from itx_testkit.profile import ArtifactProfile
+from itx_testkit.seeder.db.base import DbSeeder
+from itx_testkit.seeder.db.postgres import PostgresDbSeeder
 
 # ----------------------------------------
 # Artifacts
@@ -79,6 +82,7 @@ if itx_test_profile == "aws":
         "ITX_POSTGRES_USER": postgres_user,
         "ITX_POSTGRES_PASSWORD": postgres_password,
     }
+    engine = create_async_engine(url=postgres_url)
 elif itx_test_profile == "onprem":
     db_env = {
         "ITX_DB_PROVIDER": "mariadb",
@@ -88,6 +92,7 @@ elif itx_test_profile == "onprem":
         "ITX_MARIADB_USER": mariadb_user,
         "ITX_MARIADB_PASSWORD": mariadb_password,
     }
+    engine = create_async_engine(url=mariadb_url)
 else:
     raise ValueError(f"unknown YAAIRT_TEST_PROFILE: {itx_test_profile!r} (expected 'aws' or 'onprem')")
 
@@ -115,3 +120,9 @@ def control_plane_env_fixture() -> Iterator[dict[str, str]]:
 def compute_plane_env_fixture() -> Iterator[dict[str, str]]:
     env: dict[str, str] = {}
     yield env
+
+
+@pytest.fixture
+async def db_seeder() -> AsyncGenerator[DbSeeder]:
+    async with PostgresDbSeeder(engine=engine) as seeder:
+        yield seeder
