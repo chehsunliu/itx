@@ -1,21 +1,39 @@
 import gzip
 import json
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Column, MetaData, Table, insert, text
+from sqlalchemy import Column, MetaData, Table, insert, select, text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, async_sessionmaker
+from sqlalchemy.orm import selectinload
 
 from itx_testkit.seeder.db.base import DbReader, DbSeeder
+from itx_testkit.seeder.db.postgres_tables import Post
 
 
 class PostgresDbReader(DbReader):
     def __init__(self, engine: AsyncEngine):
         self._session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
-    async def dummy(self):
-        pass
+    async def get_post(self, post_id: int, user_id: str) -> dict[str, Any]:
+        async with self._session_factory() as session:
+            stmt = (
+                select(Post)
+                .options(selectinload(Post.tags))
+                .where(Post.id == post_id, Post.author_id == uuid.UUID(user_id))
+            )
+            post = (await session.execute(stmt)).scalar_one()
+
+        return {
+            "id": post.id,
+            "author_id": post.author_id,
+            "title": post.title,
+            "body": post.body,
+            "tags": [t.name for t in post.tags],
+            "created_at": post.created_at,
+        }
 
 
 class PostgresDbSeeder(DbSeeder):
