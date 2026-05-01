@@ -3,7 +3,9 @@ package mariadb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
+	"time"
 
 	"github.com/chehsunliu/itx/itx-go/itx-contract/repo/post"
 )
@@ -69,6 +71,197 @@ func (r *postRepo) List(ctx context.Context, params post.ListParams) ([]post.Pos
 		}
 	}
 	return posts, nil
+}
+
+func (r *postRepo) Get(ctx context.Context, params post.GetParams) (post.Post, error) {
+	row := r.db.QueryRowContext(ctx,
+		"SELECT id, author_id, title, body, created_at FROM posts WHERE id = ?",
+		params.ID)
+	var p post.Post
+	var authorID string
+	if err := row.Scan(&p.ID, &authorID, &p.Title, &p.Body, &p.CreatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return post.Post{}, post.ErrNotFound
+		}
+		return post.Post{}, err
+	}
+	if err := p.AuthorID.UnmarshalText([]byte(authorID)); err != nil {
+		return post.Post{}, err
+	}
+
+	tagMap, err := fetchTagsFor(ctx, r.db, []int64{p.ID})
+	if err != nil {
+		return post.Post{}, err
+	}
+	p.Tags = tagMap[p.ID]
+	if p.Tags == nil {
+		p.Tags = []string{}
+	}
+	return p, nil
+}
+
+func (r *postRepo) Create(ctx context.Context, params post.CreateParams) (post.Post, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return post.Post{}, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.ExecContext(ctx,
+		"INSERT INTO posts (author_id, title, body) VALUES (?, ?, ?)",
+		params.AuthorID.String(), params.Title, params.Body)
+	if err != nil {
+		return post.Post{}, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return post.Post{}, err
+	}
+
+	var createdAt time.Time
+	if err := tx.QueryRowContext(ctx,
+		"SELECT created_at FROM posts WHERE id = ?", id).Scan(&createdAt); err != nil {
+		return post.Post{}, err
+	}
+
+	tagIDs, err := upsertTagsTx(ctx, tx, params.Tags)
+	if err != nil {
+		return post.Post{}, err
+	}
+	if err := linkPostTagsTx(ctx, tx, id, tagIDs); err != nil {
+		return post.Post{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return post.Post{}, err
+	}
+
+	tags := append([]string{}, params.Tags...)
+	return post.Post{
+		ID:        id,
+		AuthorID:  params.AuthorID,
+		Title:     params.Title,
+		Body:      params.Body,
+		Tags:      tags,
+		CreatedAt: createdAt,
+	}, nil
+}
+
+func (r *postRepo) Update(ctx context.Context, params post.UpdateParams) (post.Post, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return post.Post{}, err
+	}
+	defer tx.Rollback()
+
+	var p post.Post
+	var authorID string
+	err = tx.QueryRowContext(ctx,
+		"SELECT id, author_id, title, body, created_at FROM posts "+
+			"WHERE id = ? AND author_id = ? FOR UPDATE",
+		params.ID, params.AuthorID.String()).Scan(&p.ID, &authorID, &p.Title, &p.Body, &p.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return post.Post{}, post.ErrNotFound
+		}
+		return post.Post{}, err
+	}
+	p.AuthorID = params.AuthorID
+
+	if params.Title != nil {
+		p.Title = *params.Title
+	}
+	if params.Body != nil {
+		p.Body = *params.Body
+	}
+	if _, err := tx.ExecContext(ctx,
+		"UPDATE posts SET title = ?, body = ? WHERE id = ?",
+		p.Title, p.Body, p.ID); err != nil {
+		return post.Post{}, err
+	}
+
+	if params.Tags != nil {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM post_tags WHERE post_id = ?", p.ID); err != nil {
+			return post.Post{}, err
+		}
+		tagIDs, err := upsertTagsTx(ctx, tx, *params.Tags)
+		if err != nil {
+			return post.Post{}, err
+		}
+		if err := linkPostTagsTx(ctx, tx, p.ID, tagIDs); err != nil {
+			return post.Post{}, err
+		}
+		p.Tags = append([]string{}, (*params.Tags)...)
+	} else {
+		rows, err := tx.QueryContext(ctx,
+			"SELECT t.name FROM post_tags pt JOIN tags t ON pt.tag_id = t.id "+
+				"WHERE pt.post_id = ? ORDER BY t.name", p.ID)
+		if err != nil {
+			return post.Post{}, err
+		}
+		var tags []string
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				rows.Close()
+				return post.Post{}, err
+			}
+			tags = append(tags, name)
+		}
+		rows.Close()
+		if tags == nil {
+			tags = []string{}
+		}
+		p.Tags = tags
+	}
+
+	if err := tx.Commit(); err != nil {
+		return post.Post{}, err
+	}
+	return p, nil
+}
+
+func (r *postRepo) Delete(ctx context.Context, params post.DeleteParams) error {
+	result, err := r.db.ExecContext(ctx,
+		"DELETE FROM posts WHERE id = ? AND author_id = ?",
+		params.ID, params.AuthorID.String())
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return post.ErrNotFound
+	}
+	return nil
+}
+
+func upsertTagsTx(ctx context.Context, tx *sql.Tx, names []string) ([]int64, error) {
+	ids := make([]int64, 0, len(names))
+	for _, name := range names {
+		if _, err := tx.ExecContext(ctx, "INSERT IGNORE INTO tags (name) VALUES (?)", name); err != nil {
+			return nil, err
+		}
+		var id int64
+		if err := tx.QueryRowContext(ctx, "SELECT id FROM tags WHERE name = ?", name).Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func linkPostTagsTx(ctx context.Context, tx *sql.Tx, postID int64, tagIDs []int64) error {
+	for _, tagID := range tagIDs {
+		if _, err := tx.ExecContext(ctx,
+			"INSERT IGNORE INTO post_tags (post_id, tag_id) VALUES (?, ?)",
+			postID, tagID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func fetchTagsFor(ctx context.Context, db *sql.DB, ids []int64) (map[int64][]string, error) {

@@ -25,6 +25,34 @@ type ListParams struct {
 	Offset   uint32
 }
 
+type GetParams struct {
+	ID int64
+}
+
+type CreateParams struct {
+	AuthorID uuid.UUID
+	Title    string
+	Body     string
+	Tags     []string
+}
+
+type UpdateParams struct {
+	ID       int64
+	AuthorID uuid.UUID
+	Title    *string
+	Body     *string
+	Tags     *[]string
+}
+
+type DeleteParams struct {
+	ID       int64
+	AuthorID uuid.UUID
+}
+
 type Repo interface {
 	List(ctx context.Context, params ListParams) ([]Post, error)
+	Get(ctx context.Context, params GetParams) (Post, error)
+	Create(ctx context.Context, params CreateParams) (Post, error)
+	Update(ctx context.Context, params UpdateParams) (Post, error)
+	Delete(ctx context.Context, params DeleteParams) error
 }

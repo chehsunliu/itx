@@ -1,6 +1,6 @@
 use crate::error::BackendError;
-use itx_contract::repo::error::RepoError;
-use itx_contract::repo::post::{ListParams, Post, PostRepo};
+use crate::feature::post::dto::PostDto;
+use itx_contract::repo::post::{ListParams, PostRepo};
 use serde::Serialize;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -14,32 +14,7 @@ pub struct ExecuteParams {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExecuteOutput {
-    pub items: Vec<Item>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Item {
-    pub id: i64,
-    pub author_id: Uuid,
-    pub title: String,
-    pub body: String,
-    pub tags: Vec<String>,
-    #[serde(with = "time::serde::rfc3339")]
-    pub created_at: time::OffsetDateTime,
-}
-
-impl From<Post> for Item {
-    fn from(post: Post) -> Self {
-        Self {
-            id: post.id,
-            author_id: post.author_id,
-            title: post.title,
-            body: post.body,
-            tags: post.tags,
-            created_at: post.created_at,
-        }
-    }
+    pub items: Vec<PostDto>,
 }
 
 pub struct ListPostsUseCase {
@@ -59,14 +34,10 @@ impl ListPostsUseCase {
                 limit: params.limit,
                 offset: params.offset,
             })
-            .await
-            .map_err(|e| match e {
-                RepoError::NotFound => BackendError::Unknown("not found".into()),
-                RepoError::Unknown(s) => BackendError::Unknown(s),
-            })?;
+            .await?;
 
         Ok(ExecuteOutput {
-            items: posts.into_iter().map(Item::from).collect(),
+            items: posts.into_iter().map(PostDto::from).collect(),
         })
     }
 }

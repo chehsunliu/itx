@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 
 class DbReader(ABC):
     @abstractmethod
-    async def dummy(self): ...
+    async def get_post(self, post_id: int, user_id: str) -> dict[str, Any]: ...
 
 
 class DbSeeder(ABC):
