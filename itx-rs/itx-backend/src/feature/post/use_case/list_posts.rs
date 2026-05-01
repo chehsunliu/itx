@@ -7,6 +7,8 @@ use uuid::Uuid;
 
 pub struct ExecuteParams {
     pub user_id: Uuid,
+    pub limit: u32,
+    pub offset: u32,
 }
 
 #[derive(Serialize)]
@@ -54,8 +56,8 @@ impl ListPostsUseCase {
             .post_repo
             .list(ListParams {
                 author_id: Some(params.user_id),
-                limit: 0,
-                offset: 0,
+                limit: params.limit,
+                offset: params.offset,
             })
             .await
             .map_err(|e| match e {

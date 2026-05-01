@@ -28,13 +28,34 @@ class TestListPosts:
             "data": {
                 "items": [
                     {
+                        "id": 3,
+                        "authorId": user_id,
+                        "title": "Weekend recap",
+                        "body": "Coffee and code.",
+                        "tags": ["life"],
+                        "createdAt": "2026-03-17T12:00:00Z",
+                    },
+                    {
+                        "id": 2,
+                        "authorId": user_id,
+                        "title": "Rust adventures",
+                        "body": "Talking about traits.",
+                        "tags": ["design", "rust"],
+                        "createdAt": "2026-03-16T11:00:00Z",
+                    },
+                    {
                         "id": 1,
                         "authorId": user_id,
                         "title": "Yeah",
                         "body": "Blah blah blah...",
                         "tags": [],
                         "createdAt": "2026-03-15T10:00:00Z",
-                    }
+                    },
                 ]
             }
         }
+
+        r = strict_httpx_client.get("/api/v1/posts", headers=headers, params={"limit": 2, "offset": 1})
+        assert r.status_code == 200, r.text
+        items = r.json()["data"]["items"]
+        assert [item["id"] for item in items] == [2, 1]
