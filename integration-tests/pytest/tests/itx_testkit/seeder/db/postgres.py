@@ -85,6 +85,20 @@ class PostgresDbSeeder(DbSeeder):
                 rows = [_convert(row, table=table) for row in rows]
                 await conn.execute(insert(table), rows)
 
+            for table in self._tables.values():
+                if "id" not in table.columns:
+                    continue
+                seq_name = (
+                    await conn.execute(text(f"SELECT pg_get_serial_sequence('{table.name}', 'id')"))
+                ).scalar()
+                if seq_name is None:
+                    continue
+                await conn.execute(
+                    text(
+                        f"SELECT setval('{seq_name}', COALESCE((SELECT MAX(id) FROM {table.name}), 1), true)"
+                    )
+                )
+
             await _show_banner(conn, "FINISH LOAD DATA")
 
     def reader(self) -> PostgresDbReader:

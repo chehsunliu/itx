@@ -56,20 +56,94 @@ paths:
                 data:
                   items: []
         "401":
-          description: Caller is not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error:
-                  message: Unauthorized
+          $ref: "#/components/responses/Unauthorized"
         "5XX":
-          description: Server error
+          $ref: "#/components/responses/ServerError"
+    post:
+      summary: Create post
+      operationId: createPost
+      parameters:
+        - $ref: "#/components/parameters/ItxUserId"
+        - $ref: "#/components/parameters/ItxRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        "201":
+          description: Post created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/PostResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /api/v1/posts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PostId"
+    get:
+      summary: Get post
+      operationId: getPost
+      parameters:
+        - $ref: "#/components/parameters/ItxUserId"
+        - $ref: "#/components/parameters/ItxRequestId"
+      responses:
+        "200":
+          description: The requested post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+    patch:
+      summary: Update post
+      operationId: updatePost
+      parameters:
+        - $ref: "#/components/parameters/ItxUserId"
+        - $ref: "#/components/parameters/ItxRequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePostRequest"
+      responses:
+        "200":
+          description: The updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      summary: Delete post
+      operationId: deletePost
+      parameters:
+        - $ref: "#/components/parameters/ItxUserId"
+        - $ref: "#/components/parameters/ItxRequestId"
+      responses:
+        "204":
+          description: Post deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
 components:
   parameters:
     ItxUserId:
@@ -86,6 +160,35 @@ components:
       schema:
         type: string
         format: uuid
+    PostId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    Unauthorized:
+      description: Caller is not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              message: Unauthorized
+    NotFound:
+      description: Post not found or not owned by the caller
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
     HealthResponse:
       type: object
@@ -110,8 +213,56 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Post"
+    PostResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Post"
     Post:
       type: object
+      required: [id, authorId, title, body, tags, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        authorId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        body:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+    CreatePostRequest:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+    UpdatePostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
     ErrorResponse:
       type: object
       required: [error]
