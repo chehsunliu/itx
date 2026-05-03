@@ -80,9 +80,12 @@ async fn list_subscriptions(
     Ok(Json(output))
 }
 
-pub fn create_router() -> Router<AppState> {
+pub fn create_users_router() -> Router<AppState> {
     Router::new()
         .route("/me", get(get_me))
-        .route("/me/subscriptions/{author_id}", put(subscribe).delete(unsubscribe))
         .route("/{id}/subscriptions", get(list_subscriptions))
+}
+
+pub fn create_subscriptions_router() -> Router<AppState> {
+    Router::new().route("/{author_id}", put(subscribe).delete(unsubscribe))
 }

@@ -175,7 +175,7 @@ func (h *Handler) listSubscriptions(c *gin.Context) {
 
 func (h *Handler) Register(router gin.IRouter) {
 	router.GET("/users/me", h.getMe)
-	router.PUT("/users/me/subscriptions/:author_id", h.subscribe)
-	router.DELETE("/users/me/subscriptions/:author_id", h.unsubscribe)
 	router.GET("/users/:id/subscriptions", h.listSubscriptions)
+	router.PUT("/subscriptions/:author_id", h.subscribe)
+	router.DELETE("/subscriptions/:author_id", h.unsubscribe)
 }

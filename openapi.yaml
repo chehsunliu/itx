@@ -28,7 +28,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "5XX":
           $ref: "#/components/responses/ServerError"
-  /api/v1/users/me/subscriptions/{author_id}:
+  /api/v1/subscriptions/{author_id}:
     parameters:
       - name: author_id
         in: path
