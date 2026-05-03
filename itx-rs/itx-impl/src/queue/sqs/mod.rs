@@ -1,17 +1,13 @@
 pub mod factory;
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use async_trait::async_trait;
-use aws_config::BehaviorVersion;
 use aws_sdk_sqs::Client;
-use aws_sdk_sqs::config::{Credentials, Region};
 use itx_contract::queue::error::QueueError;
-use itx_contract::queue::factory::MessageQueueFactory;
 use itx_contract::queue::{MessageHandler, MessageQueue};
 
-fn err<E: std::fmt::Display>(e: E) -> QueueError {
+pub(crate) fn err<E: std::fmt::Display>(e: E) -> QueueError {
     QueueError::Unknown(e.to_string())
 }
 
@@ -80,33 +76,4 @@ impl MessageQueue for SqsMessageQueue {
             }
         }
     }
-}
-
-/// Build an SQS client suitable for both real AWS and ElasticMQ. Reads:
-///   ITX_SQS_ENDPOINT_URL  (optional — for ElasticMQ / LocalStack; if unset, uses real AWS)
-///   ITX_SQS_REGION        (default "us-east-1")
-///   ITX_SQS_ACCESS_KEY_ID and ITX_SQS_SECRET_ACCESS_KEY (defaulted to "x"/"x" for local dev)
-pub async fn client_from_env() -> Client {
-    let region = std::env::var("ITX_SQS_REGION").unwrap_or_else(|_| "us-east-1".to_string());
-    let access_key = std::env::var("ITX_SQS_ACCESS_KEY_ID").unwrap_or_else(|_| "x".to_string());
-    let secret_key = std::env::var("ITX_SQS_SECRET_ACCESS_KEY").unwrap_or_else(|_| "x".to_string());
-
-    let mut loader = aws_config::defaults(BehaviorVersion::latest())
-        .region(Region::new(region))
-        .credentials_provider(Credentials::new(access_key, secret_key, None, None, "itx"))
-        .timeout_config(
-            aws_config::timeout::TimeoutConfig::builder()
-                .operation_attempt_timeout(Duration::from_secs(30))
-                .build(),
-        );
-
-    if let Ok(endpoint) = std::env::var("ITX_SQS_ENDPOINT_URL") {
-        loader = loader.endpoint_url(endpoint);
-    }
-
-    Client::new(&loader.load().await)
-}
-
-fn queue_name_env(env: &str, default: &str) -> String {
-    std::env::var(env).unwrap_or_else(|_| default.to_string())
 }
