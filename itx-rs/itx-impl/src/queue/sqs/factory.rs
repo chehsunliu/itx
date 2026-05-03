@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use aws_config::BehaviorVersion;
 use aws_sdk_sqs::Client;
-use aws_sdk_sqs::config::{Credentials, Region};
 use itx_contract::queue::MessageQueue;
 use itx_contract::queue::factory::MessageQueueFactory;
 
@@ -10,10 +8,7 @@ use crate::queue::sqs::SqsMessageQueue;
 
 #[derive(serde::Deserialize)]
 struct SqsMessageQueueFactoryConfig {
-    pub region: String,
-    pub access_key_id: String,
-    pub secret_access_key: String,
-    pub endpoint_url: Option<String>,
+    pub local_endpoint_url: Option<String>,
     pub control_standard_queue_url: String,
     pub control_premium_queue_url: String,
     pub compute_standard_queue_url: String,
@@ -31,19 +26,12 @@ impl SqsMessageQueueFactory {
             .from_env::<SqsMessageQueueFactoryConfig>()
             .expect("failed to read SQS environment variables");
 
-        let mut loader = aws_config::defaults(BehaviorVersion::latest())
-            .region(Region::new(config.region.clone()))
-            .credentials_provider(Credentials::new(
-                config.access_key_id.clone(),
-                config.secret_access_key.clone(),
-                None,
-                None,
-                "itx",
-            ));
-        if let Some(endpoint) = &config.endpoint_url {
-            loader = loader.endpoint_url(endpoint.clone());
+        let aws_config = aws_config::load_from_env().await;
+        let mut sqs_config = aws_sdk_sqs::config::Builder::from(&aws_config);
+        if let Some(endpoint) = &config.local_endpoint_url {
+            sqs_config = sqs_config.endpoint_url(endpoint);
         }
-        let client = Client::new(&loader.load().await);
+        let client = Client::from_conf(sqs_config.build());
 
         Self { client, config }
     }
