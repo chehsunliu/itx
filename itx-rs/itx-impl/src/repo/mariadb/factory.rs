@@ -9,8 +9,9 @@ use sqlx::MySqlPool;
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions, MySqlSslMode};
 use std::sync::Arc;
 
-#[derive(serde::Deserialize)]
-struct MariaDbRepoFactoryConfig {
+#[derive(Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct MariaDbRepoFactoryProps {
     pub host: String,
     pub port: u16,
     pub db_name: String,
@@ -23,17 +24,13 @@ pub struct MariaDbRepoFactory {
 }
 
 impl MariaDbRepoFactory {
-    pub async fn from_env() -> Result<Self, sqlx::Error> {
-        let config = envy::prefixed("ITX_MARIADB_")
-            .from_env::<MariaDbRepoFactoryConfig>()
-            .expect("failed to read MariaDB environment variables");
-
+    pub async fn new(props: MariaDbRepoFactoryProps) -> Result<Self, sqlx::Error> {
         let options = MySqlConnectOptions::new()
-            .host(&config.host)
-            .port(config.port)
-            .database(&config.db_name)
-            .username(&config.user)
-            .password(&config.password)
+            .host(&props.host)
+            .port(props.port)
+            .database(&props.db_name)
+            .username(&props.user)
+            .password(&props.password)
             .ssl_mode(MySqlSslMode::Disabled);
 
         let pool = MySqlPoolOptions::new()

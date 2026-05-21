@@ -1,6 +1,9 @@
+mod props;
+
 use std::error::Error;
 use std::sync::Arc;
 
+use crate::compute::state::props::ComputeWorkerProps;
 use itx_contract::queue::MessageQueue;
 use itx_contract::queue::factory::MessageQueueFactory;
 use itx_impl::queue::rabbitmq::factory::RabbitMessageQueueFactory;
@@ -14,7 +17,7 @@ pub struct ComputeWorkerStateProps {
 
 #[derive(Clone)]
 pub struct ComputeWorkerState {
-    pub props: ComputeWorkerStateProps,
+    pub props: ComputeWorkerProps,
     pub control_standard_queue: Arc<dyn MessageQueue>,
     pub control_premium_queue: Arc<dyn MessageQueue>,
     pub compute_standard_queue: Arc<dyn MessageQueue>,
@@ -23,12 +26,10 @@ pub struct ComputeWorkerState {
 
 impl ComputeWorkerState {
     pub async fn from_env() -> Result<Self, Box<dyn Error>> {
-        let props = envy::prefixed("ITX_")
-            .from_env::<ComputeWorkerStateProps>()
-            .expect("failed to read state props environment variables");
+        let props = ComputeWorkerProps::from_env()?;
         let queue_factory: Arc<dyn MessageQueueFactory> = match props.queue_provider.as_deref().unwrap_or("sqs") {
-            "sqs" => Arc::new(SqsMessageQueueFactory::from_env().await),
-            "rabbitmq" => Arc::new(RabbitMessageQueueFactory::from_env().await?),
+            "sqs" => Arc::new(SqsMessageQueueFactory::new(props.sqs.clone()).await),
+            "rabbitmq" => Arc::new(RabbitMessageQueueFactory::new(props.rabbitmq.clone()).await?),
             other => panic!("unknown ITX_QUEUE_PROVIDER: {other}"),
         };
 

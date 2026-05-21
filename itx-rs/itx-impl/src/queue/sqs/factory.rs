@@ -6,10 +6,10 @@ use itx_contract::queue::factory::MessageQueueFactory;
 
 use crate::queue::sqs::SqsMessageQueue;
 
-#[derive(serde::Deserialize)]
-struct SqsMessageQueueFactoryConfig {
+#[derive(Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct SqsMessageQueueFactoryProps {
     pub local_endpoint_url: Option<String>,
-    #[serde(default = "default_max_concurrency")]
     pub max_concurrency: u32,
     pub control_standard_queue_url: String,
     pub control_premium_queue_url: String,
@@ -17,29 +17,21 @@ struct SqsMessageQueueFactoryConfig {
     pub compute_premium_queue_url: String,
 }
 
-fn default_max_concurrency() -> u32 {
-    100
-}
-
 pub struct SqsMessageQueueFactory {
     client: Client,
-    config: SqsMessageQueueFactoryConfig,
+    props: SqsMessageQueueFactoryProps,
 }
 
 impl SqsMessageQueueFactory {
-    pub async fn from_env() -> Self {
-        let config = envy::prefixed("ITX_SQS_")
-            .from_env::<SqsMessageQueueFactoryConfig>()
-            .expect("failed to read SQS environment variables");
-
+    pub async fn new(props: SqsMessageQueueFactoryProps) -> Self {
         let aws_config = aws_config::load_from_env().await;
         let mut sqs_config = aws_sdk_sqs::config::Builder::from(&aws_config);
-        if let Some(endpoint) = &config.local_endpoint_url {
+        if let Some(endpoint) = &props.local_endpoint_url {
             sqs_config = sqs_config.endpoint_url(endpoint);
         }
         let client = Client::from_conf(sqs_config.build());
 
-        Self { client, config }
+        Self { client, props }
     }
 }
 
@@ -47,32 +39,32 @@ impl MessageQueueFactory for SqsMessageQueueFactory {
     fn create_control_standard_queue(&self) -> Arc<dyn MessageQueue> {
         Arc::new(SqsMessageQueue::new(
             self.client.clone(),
-            self.config.control_standard_queue_url.clone(),
-            self.config.max_concurrency,
+            self.props.control_standard_queue_url.clone(),
+            self.props.max_concurrency,
         ))
     }
 
     fn create_control_premium_queue(&self) -> Arc<dyn MessageQueue> {
         Arc::new(SqsMessageQueue::new(
             self.client.clone(),
-            self.config.control_premium_queue_url.clone(),
-            self.config.max_concurrency,
+            self.props.control_premium_queue_url.clone(),
+            self.props.max_concurrency,
         ))
     }
 
     fn create_compute_standard_queue(&self) -> Arc<dyn MessageQueue> {
         Arc::new(SqsMessageQueue::new(
             self.client.clone(),
-            self.config.compute_standard_queue_url.clone(),
-            self.config.max_concurrency,
+            self.props.compute_standard_queue_url.clone(),
+            self.props.max_concurrency,
         ))
     }
 
     fn create_compute_premium_queue(&self) -> Arc<dyn MessageQueue> {
         Arc::new(SqsMessageQueue::new(
             self.client.clone(),
-            self.config.compute_premium_queue_url.clone(),
-            self.config.max_concurrency,
+            self.props.compute_premium_queue_url.clone(),
+            self.props.max_concurrency,
         ))
     }
 }

@@ -1,3 +1,6 @@
+pub mod props;
+
+use crate::state::props::AppProps;
 use axum::extract::FromRef;
 use itx_contract::queue::MessageQueue;
 use itx_contract::queue::factory::MessageQueueFactory;
@@ -13,15 +16,9 @@ use serde::Deserialize;
 use std::error::Error;
 use std::sync::Arc;
 
-#[derive(Clone, Deserialize)]
-pub struct AppStateProps {
-    pub db_provider: Option<String>,
-    pub queue_provider: Option<String>,
-}
-
 #[derive(Clone)]
 pub struct AppState {
-    pub props: AppStateProps,
+    pub props: AppProps,
     pub post_repo: Arc<dyn PostRepo>,
     pub user_repo: Arc<dyn UserRepo>,
     pub subscription_repo: Arc<dyn SubscriptionRepo>,
@@ -30,17 +27,15 @@ pub struct AppState {
 
 impl AppState {
     pub async fn from_env() -> Result<Self, Box<dyn Error>> {
-        let props = envy::prefixed("ITX_")
-            .from_env::<AppStateProps>()
-            .expect("failed to read state props environment variables");
+        let props = AppProps::from_env().expect("failed to read app props environment variables");
         let repo_factory: Arc<dyn RepoFactory> = match props.db_provider.as_deref().unwrap_or("postgres") {
-            "postgres" => Arc::new(PostgresRepoFactory::from_env().await?),
-            "mariadb" => Arc::new(MariaDbRepoFactory::from_env().await?),
+            "postgres" => Arc::new(PostgresRepoFactory::new(props.postgres.clone()).await?),
+            "mariadb" => Arc::new(MariaDbRepoFactory::new(props.mariadb.clone()).await?),
             other => panic!("unknown ITX_DB_PROVIDER: {other}"),
         };
         let queue_factory: Arc<dyn MessageQueueFactory> = match props.queue_provider.as_deref().unwrap_or("sqs") {
-            "sqs" => Arc::new(SqsMessageQueueFactory::from_env().await),
-            "rabbitmq" => Arc::new(RabbitMessageQueueFactory::from_env().await?),
+            "sqs" => Arc::new(SqsMessageQueueFactory::new(props.sqs.clone()).await),
+            "rabbitmq" => Arc::new(RabbitMessageQueueFactory::new(props.rabbitmq.clone()).await?),
             other => panic!("unknown ITX_QUEUE_PROVIDER: {other}"),
         };
 
