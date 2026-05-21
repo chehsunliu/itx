@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"os"
 
 	"github.com/chehsunliu/itx/itx-go/itx-contract/repo/post"
 	"github.com/chehsunliu/itx/itx-go/itx-contract/repo/subscription"
@@ -11,18 +10,20 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+type RepoFactoryProps struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	DBName   string `yaml:"db-name"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+}
+
 type RepoFactory struct {
 	db *sql.DB
 }
 
-func FromEnv() (*RepoFactory, error) {
-	host := os.Getenv("ITX_POSTGRES_HOST")
-	port := os.Getenv("ITX_POSTGRES_PORT")
-	dbName := os.Getenv("ITX_POSTGRES_DB_NAME")
-	dbUser := os.Getenv("ITX_POSTGRES_USER")
-	password := os.Getenv("ITX_POSTGRES_PASSWORD")
-
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, password, host, port, dbName)
+func New(props RepoFactoryProps) (*RepoFactory, error) {
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", props.User, props.Password, props.Host, props.Port, props.DBName)
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err

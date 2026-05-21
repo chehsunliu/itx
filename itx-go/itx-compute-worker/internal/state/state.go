@@ -1,8 +1,7 @@
-package compute
+package state
 
 import (
 	"fmt"
-	"os"
 
 	contractqueue "github.com/chehsunliu/itx/itx-go/itx-contract/queue"
 	queuefactory "github.com/chehsunliu/itx/itx-go/itx-contract/queue/factory"
@@ -11,6 +10,7 @@ import (
 )
 
 type WorkerState struct {
+	Props                WorkerProps
 	ControlStandardQueue contractqueue.MessageQueue
 	ControlPremiumQueue  contractqueue.MessageQueue
 	ComputeStandardQueue contractqueue.MessageQueue
@@ -18,20 +18,25 @@ type WorkerState struct {
 }
 
 func FromEnv() (WorkerState, error) {
-	queueProvider := os.Getenv("ITX_QUEUE_PROVIDER")
+	props, err := PropsFromEnv()
+	if err != nil {
+		return WorkerState{}, err
+	}
+
+	queueProvider := props.QueueProvider
 	if queueProvider == "" {
 		queueProvider = "sqs"
 	}
 	var queueFactory queuefactory.MessageQueueFactory
 	switch queueProvider {
 	case "sqs":
-		f, err := queuesqs.FromEnv()
+		f, err := queuesqs.New(props.SQS)
 		if err != nil {
 			return WorkerState{}, err
 		}
 		queueFactory = f
 	case "rabbitmq":
-		f, err := queuerabbit.FromEnv()
+		f, err := queuerabbit.New(props.RabbitMQ)
 		if err != nil {
 			return WorkerState{}, err
 		}
@@ -41,6 +46,7 @@ func FromEnv() (WorkerState, error) {
 	}
 
 	return WorkerState{
+		Props:                props,
 		ControlStandardQueue: queueFactory.CreateControlStandardQueue(),
 		ControlPremiumQueue:  queueFactory.CreateControlPremiumQueue(),
 		ComputeStandardQueue: queueFactory.CreateComputeStandardQueue(),

@@ -1,4 +1,5 @@
-package run
+// Package worker provides the shared worker runtime loop used by control and compute workers.
+package worker
 
 import (
 	"context"
@@ -29,7 +30,6 @@ func Run(queues []queue.MessageQueue, handler queue.MessageHandler) {
 		}(q)
 	}
 
-	// Block on signal.
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	<-sig

@@ -2,7 +2,8 @@ go 1.25.4
 
 use (
 	./itx-backend
+	./itx-compute-worker
 	./itx-contract
+	./itx-control-worker
 	./itx-impl
-	./itx-worker
 )

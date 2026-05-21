@@ -1,4 +1,4 @@
-package control
+package dispatcher
 
 import (
 	"context"
@@ -9,19 +9,15 @@ import (
 	"github.com/chehsunliu/itx/itx-go/itx-contract/email"
 	"github.com/chehsunliu/itx/itx-go/itx-contract/queue/message"
 	"github.com/chehsunliu/itx/itx-go/itx-contract/repo/post"
+	"github.com/chehsunliu/itx/itx-go/itx-control-worker/internal/state"
 )
 
 type Dispatcher struct {
-	state WorkerState
+	state state.WorkerState
 }
 
-func NewDispatcher(state WorkerState) *Dispatcher {
+func New(state state.WorkerState) *Dispatcher {
 	return &Dispatcher{state: state}
-}
-
-type envelope struct {
-	Type string          `json:"type"`
-	Raw  json.RawMessage `json:"-"`
 }
 
 func (d *Dispatcher) Handle(ctx context.Context, body string) error {

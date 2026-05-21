@@ -3,7 +3,6 @@ package mariadb
 import (
 	"database/sql"
 	"fmt"
-	"os"
 
 	"github.com/chehsunliu/itx/itx-go/itx-contract/repo/post"
 	"github.com/chehsunliu/itx/itx-go/itx-contract/repo/subscription"
@@ -11,19 +10,21 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+type RepoFactoryProps struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	DBName   string `yaml:"db-name"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+}
+
 type RepoFactory struct {
 	db *sql.DB
 }
 
-func FromEnv() (*RepoFactory, error) {
-	host := os.Getenv("ITX_MARIADB_HOST")
-	port := os.Getenv("ITX_MARIADB_PORT")
-	dbName := os.Getenv("ITX_MARIADB_DB_NAME")
-	dbUser := os.Getenv("ITX_MARIADB_USER")
-	password := os.Getenv("ITX_MARIADB_PASSWORD")
-
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=UTC",
-		dbUser, password, host, port, dbName)
+func New(props RepoFactoryProps) (*RepoFactory, error) {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=UTC",
+		props.User, props.Password, props.Host, props.Port, props.DBName)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
