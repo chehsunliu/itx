@@ -1,0 +1,35 @@
+db-provider: ${ITX_DB_PROVIDER:}
+queue-provider: ${ITX_QUEUE_PROVIDER:}
+
+mariadb:
+  host: ${ITX_MARIADB_HOST:}
+  port: ${ITX_MARIADB_PORT:0}
+  db-name: ${ITX_MARIADB_DB_NAME:}
+  user: ${ITX_MARIADB_USER:}
+  password: ${ITX_MARIADB_PASSWORD:}
+
+postgres:
+  host: ${ITX_POSTGRES_HOST:}
+  port: ${ITX_POSTGRES_PORT:0}
+  db-name: ${ITX_POSTGRES_DB_NAME:}
+  user: ${ITX_POSTGRES_USER:}
+  password: ${ITX_POSTGRES_PASSWORD:}
+
+rabbitmq:
+  host: ${ITX_RABBITMQ_HOST:}
+  port: ${ITX_RABBITMQ_PORT:0}
+  user: ${ITX_RABBITMQ_USER:}
+  password: ${ITX_RABBITMQ_PASSWORD:}
+  max-concurrency: ${ITX_RABBITMQ_MAX_CONCURRENCY:100}
+  control-standard-queue: ${ITX_RABBITMQ_CONTROL_STANDARD_QUEUE:}
+  control-premium-queue: ${ITX_RABBITMQ_CONTROL_PREMIUM_QUEUE:}
+  compute-standard-queue: ${ITX_RABBITMQ_COMPUTE_STANDARD_QUEUE:}
+  compute-premium-queue: ${ITX_RABBITMQ_COMPUTE_PREMIUM_QUEUE:}
+
+sqs:
+  local-endpoint-url: ${ITX_SQS_LOCAL_ENDPOINT_URL:}
+  max-concurrency: ${ITX_SQS_MAX_CONCURRENCY:100}
+  control-standard-queue-url: ${ITX_SQS_CONTROL_STANDARD_QUEUE_URL:}
+  control-premium-queue-url: ${ITX_SQS_CONTROL_PREMIUM_QUEUE_URL:}
+  compute-standard-queue-url: ${ITX_SQS_COMPUTE_STANDARD_QUEUE_URL:}
+  compute-premium-queue-url: ${ITX_SQS_COMPUTE_PREMIUM_QUEUE_URL:}

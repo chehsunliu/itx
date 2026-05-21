@@ -1,10 +1,11 @@
-module github.com/chehsunliu/itx/itx-go/itx-worker
+module github.com/chehsunliu/itx/itx-go/itx-control-worker
 
 go 1.25.4
 
 require (
 	github.com/chehsunliu/itx/itx-go/itx-contract v0.0.0
 	github.com/chehsunliu/itx/itx-go/itx-impl v0.0.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -30,9 +31,11 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.9.2 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/rabbitmq/amqp091-go v1.11.0 // indirect
+	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 )
 
 replace (

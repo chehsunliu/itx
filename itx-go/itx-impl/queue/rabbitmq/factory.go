@@ -2,65 +2,49 @@ package rabbitmq
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/chehsunliu/itx/itx-go/itx-contract/queue"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const defaultMaxConcurrency = 100
-
-type MessageQueueFactory struct {
-	conn                     *amqp.Connection
-	maxConcurrency           int64
-	controlStandardQueueName string
-	controlPremiumQueueName  string
-	computeStandardQueueName string
-	computePremiumQueueName  string
+type FactoryProps struct {
+	Host                 string `yaml:"host"`
+	Port                 int    `yaml:"port"`
+	User                 string `yaml:"user"`
+	Password             string `yaml:"password"`
+	MaxConcurrency       int64  `yaml:"max-concurrency"`
+	ControlStandardQueue string `yaml:"control-standard-queue"`
+	ControlPremiumQueue  string `yaml:"control-premium-queue"`
+	ComputeStandardQueue string `yaml:"compute-standard-queue"`
+	ComputePremiumQueue  string `yaml:"compute-premium-queue"`
 }
 
-func FromEnv() (*MessageQueueFactory, error) {
-	host := os.Getenv("ITX_RABBITMQ_HOST")
-	port := os.Getenv("ITX_RABBITMQ_PORT")
-	user := os.Getenv("ITX_RABBITMQ_USER")
-	password := os.Getenv("ITX_RABBITMQ_PASSWORD")
+type MessageQueueFactory struct {
+	conn  *amqp.Connection
+	props FactoryProps
+}
 
-	url := fmt.Sprintf("amqp://%s:%s@%s:%s/%%2F", user, password, host, port)
+func New(props FactoryProps) (*MessageQueueFactory, error) {
+	url := fmt.Sprintf("amqp://%s:%s@%s:%d/%%2F", props.User, props.Password, props.Host, props.Port)
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, err
 	}
-
-	maxConcurrency := int64(defaultMaxConcurrency)
-	if raw := os.Getenv("ITX_RABBITMQ_MAX_CONCURRENCY"); raw != "" {
-		if v, err := strconv.ParseInt(raw, 10, 64); err == nil && v > 0 {
-			maxConcurrency = v
-		}
-	}
-
-	return &MessageQueueFactory{
-		conn:                     conn,
-		maxConcurrency:           maxConcurrency,
-		controlStandardQueueName: os.Getenv("ITX_RABBITMQ_CONTROL_STANDARD_QUEUE"),
-		controlPremiumQueueName:  os.Getenv("ITX_RABBITMQ_CONTROL_PREMIUM_QUEUE"),
-		computeStandardQueueName: os.Getenv("ITX_RABBITMQ_COMPUTE_STANDARD_QUEUE"),
-		computePremiumQueueName:  os.Getenv("ITX_RABBITMQ_COMPUTE_PREMIUM_QUEUE"),
-	}, nil
+	return &MessageQueueFactory{conn: conn, props: props}, nil
 }
 
 func (f *MessageQueueFactory) CreateControlStandardQueue() queue.MessageQueue {
-	return newMessageQueue(f.conn, f.controlStandardQueueName, f.maxConcurrency)
+	return newMessageQueue(f.conn, f.props.ControlStandardQueue, f.props.MaxConcurrency)
 }
 
 func (f *MessageQueueFactory) CreateControlPremiumQueue() queue.MessageQueue {
-	return newMessageQueue(f.conn, f.controlPremiumQueueName, f.maxConcurrency)
+	return newMessageQueue(f.conn, f.props.ControlPremiumQueue, f.props.MaxConcurrency)
 }
 
 func (f *MessageQueueFactory) CreateComputeStandardQueue() queue.MessageQueue {
-	return newMessageQueue(f.conn, f.computeStandardQueueName, f.maxConcurrency)
+	return newMessageQueue(f.conn, f.props.ComputeStandardQueue, f.props.MaxConcurrency)
 }
 
 func (f *MessageQueueFactory) CreateComputePremiumQueue() queue.MessageQueue {
-	return newMessageQueue(f.conn, f.computePremiumQueueName, f.maxConcurrency)
+	return newMessageQueue(f.conn, f.props.ComputePremiumQueue, f.props.MaxConcurrency)
 }

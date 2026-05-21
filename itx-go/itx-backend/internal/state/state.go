@@ -2,7 +2,6 @@ package state
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/chehsunliu/itx/itx-go/itx-contract/queue"
 	queuefactory "github.com/chehsunliu/itx/itx-go/itx-contract/queue/factory"
@@ -17,6 +16,7 @@ import (
 )
 
 type AppState struct {
+	Props                AppProps
 	PostRepo             post.Repo
 	UserRepo             user.Repo
 	SubscriptionRepo     subscription.Repo
@@ -24,44 +24,47 @@ type AppState struct {
 }
 
 func FromEnv() (AppState, error) {
-	provider := os.Getenv("ITX_DB_PROVIDER")
-	if provider == "" {
-		provider = "postgres"
+	props, err := PropsFromEnv()
+	if err != nil {
+		return AppState{}, err
 	}
 
+	dbProvider := props.DBProvider
+	if dbProvider == "" {
+		dbProvider = "postgres"
+	}
 	var repoFactory factory.RepoFactory
-	switch provider {
+	switch dbProvider {
 	case "postgres":
-		f, err := postgres.FromEnv()
+		f, err := postgres.New(props.Postgres)
 		if err != nil {
 			return AppState{}, err
 		}
 		repoFactory = f
 	case "mariadb":
-		f, err := mariadb.FromEnv()
+		f, err := mariadb.New(props.MariaDB)
 		if err != nil {
 			return AppState{}, err
 		}
 		repoFactory = f
 	default:
-		return AppState{}, fmt.Errorf("unknown ITX_DB_PROVIDER: %s", provider)
+		return AppState{}, fmt.Errorf("unknown ITX_DB_PROVIDER: %s", dbProvider)
 	}
 
-	queueProvider := os.Getenv("ITX_QUEUE_PROVIDER")
+	queueProvider := props.QueueProvider
 	if queueProvider == "" {
 		queueProvider = "sqs"
 	}
-
 	var queueFactory queuefactory.MessageQueueFactory
 	switch queueProvider {
 	case "sqs":
-		f, err := queuesqs.FromEnv()
+		f, err := queuesqs.New(props.SQS)
 		if err != nil {
 			return AppState{}, err
 		}
 		queueFactory = f
 	case "rabbitmq":
-		f, err := queuerabbit.FromEnv()
+		f, err := queuerabbit.New(props.RabbitMQ)
 		if err != nil {
 			return AppState{}, err
 		}
@@ -71,6 +74,7 @@ func FromEnv() (AppState, error) {
 	}
 
 	return AppState{
+		Props:                props,
 		PostRepo:             repoFactory.CreatePostRepo(),
 		UserRepo:             repoFactory.CreateUserRepo(),
 		SubscriptionRepo:     repoFactory.CreateSubscriptionRepo(),

@@ -1,20 +1,22 @@
-package compute
+package dispatcher
 
 import (
 	"context"
 	"log/slog"
+
+	"github.com/chehsunliu/itx/itx-go/itx-compute-worker/internal/state"
 )
 
 type Dispatcher struct {
-	state WorkerState
+	//nolint:unused // wired up by upcoming handlers
+	state state.WorkerState
 }
 
-func NewDispatcher(state WorkerState) *Dispatcher {
+func New(state state.WorkerState) *Dispatcher {
 	return &Dispatcher{state: state}
 }
 
 func (d *Dispatcher) Handle(_ context.Context, body string) error {
-	// No compute-plane message types yet — log and ack so the queue stays drained.
 	slog.Info("compute message received (no handler yet)", "body", body)
 	return nil
 }

@@ -1,8 +1,7 @@
-package control
+package state
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/chehsunliu/itx/itx-go/itx-contract/email"
 	contractqueue "github.com/chehsunliu/itx/itx-go/itx-contract/queue"
@@ -19,6 +18,7 @@ import (
 )
 
 type WorkerState struct {
+	Props                WorkerProps
 	PostRepo             post.Repo
 	UserRepo             user.Repo
 	SubscriptionRepo     subscription.Repo
@@ -30,20 +30,25 @@ type WorkerState struct {
 }
 
 func FromEnv() (WorkerState, error) {
-	dbProvider := os.Getenv("ITX_DB_PROVIDER")
+	props, err := PropsFromEnv()
+	if err != nil {
+		return WorkerState{}, err
+	}
+
+	dbProvider := props.DBProvider
 	if dbProvider == "" {
 		dbProvider = "postgres"
 	}
 	var repoFactory factory.RepoFactory
 	switch dbProvider {
 	case "postgres":
-		f, err := postgres.FromEnv()
+		f, err := postgres.New(props.Postgres)
 		if err != nil {
 			return WorkerState{}, err
 		}
 		repoFactory = f
 	case "mariadb":
-		f, err := mariadb.FromEnv()
+		f, err := mariadb.New(props.MariaDB)
 		if err != nil {
 			return WorkerState{}, err
 		}
@@ -52,20 +57,20 @@ func FromEnv() (WorkerState, error) {
 		return WorkerState{}, fmt.Errorf("unknown ITX_DB_PROVIDER: %s", dbProvider)
 	}
 
-	queueProvider := os.Getenv("ITX_QUEUE_PROVIDER")
+	queueProvider := props.QueueProvider
 	if queueProvider == "" {
 		queueProvider = "sqs"
 	}
 	var queueFactory queuefactory.MessageQueueFactory
 	switch queueProvider {
 	case "sqs":
-		f, err := queuesqs.FromEnv()
+		f, err := queuesqs.New(props.SQS)
 		if err != nil {
 			return WorkerState{}, err
 		}
 		queueFactory = f
 	case "rabbitmq":
-		f, err := queuerabbit.FromEnv()
+		f, err := queuerabbit.New(props.RabbitMQ)
 		if err != nil {
 			return WorkerState{}, err
 		}
@@ -75,6 +80,7 @@ func FromEnv() (WorkerState, error) {
 	}
 
 	return WorkerState{
+		Props:                props,
 		PostRepo:             repoFactory.CreatePostRepo(),
 		UserRepo:             repoFactory.CreateUserRepo(),
 		SubscriptionRepo:     repoFactory.CreateSubscriptionRepo(),
