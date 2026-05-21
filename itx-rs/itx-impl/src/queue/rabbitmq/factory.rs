@@ -6,13 +6,13 @@ use lapin::{Connection, ConnectionProperties};
 
 use crate::queue::rabbitmq::RabbitMessageQueue;
 
-#[derive(serde::Deserialize)]
-struct RabbitMessageQueueFactoryConfig {
+#[derive(Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct RabbitMessageQueueFactoryProps {
     pub host: String,
     pub port: u16,
     pub user: String,
     pub password: String,
-    #[serde(default = "default_max_concurrency")]
     pub max_concurrency: u32,
     pub control_standard_queue: String,
     pub control_premium_queue: String,
@@ -20,30 +20,22 @@ struct RabbitMessageQueueFactoryConfig {
     pub compute_premium_queue: String,
 }
 
-fn default_max_concurrency() -> u32 {
-    100
-}
-
 pub struct RabbitMessageQueueFactory {
     conn: Arc<Connection>,
-    config: RabbitMessageQueueFactoryConfig,
+    props: RabbitMessageQueueFactoryProps,
 }
 
 impl RabbitMessageQueueFactory {
-    pub async fn from_env() -> Result<Self, lapin::Error> {
-        let config = envy::prefixed("ITX_RABBITMQ_")
-            .from_env::<RabbitMessageQueueFactoryConfig>()
-            .expect("failed to read RabbitMQ environment variables");
-
+    pub async fn new(props: RabbitMessageQueueFactoryProps) -> Result<Self, lapin::Error> {
         let url = format!(
             "amqp://{}:{}@{}:{}/%2F",
-            config.user, config.password, config.host, config.port
+            props.user, props.password, props.host, props.port
         );
         let conn = Connection::connect(&url, ConnectionProperties::default()).await?;
 
         Ok(Self {
             conn: Arc::new(conn),
-            config,
+            props,
         })
     }
 }
@@ -52,32 +44,32 @@ impl MessageQueueFactory for RabbitMessageQueueFactory {
     fn create_control_standard_queue(&self) -> Arc<dyn MessageQueue> {
         Arc::new(RabbitMessageQueue::new(
             self.conn.clone(),
-            self.config.control_standard_queue.clone(),
-            self.config.max_concurrency,
+            self.props.control_standard_queue.clone(),
+            self.props.max_concurrency,
         ))
     }
 
     fn create_control_premium_queue(&self) -> Arc<dyn MessageQueue> {
         Arc::new(RabbitMessageQueue::new(
             self.conn.clone(),
-            self.config.control_premium_queue.clone(),
-            self.config.max_concurrency,
+            self.props.control_premium_queue.clone(),
+            self.props.max_concurrency,
         ))
     }
 
     fn create_compute_standard_queue(&self) -> Arc<dyn MessageQueue> {
         Arc::new(RabbitMessageQueue::new(
             self.conn.clone(),
-            self.config.compute_standard_queue.clone(),
-            self.config.max_concurrency,
+            self.props.compute_standard_queue.clone(),
+            self.props.max_concurrency,
         ))
     }
 
     fn create_compute_premium_queue(&self) -> Arc<dyn MessageQueue> {
         Arc::new(RabbitMessageQueue::new(
             self.conn.clone(),
-            self.config.compute_premium_queue.clone(),
-            self.config.max_concurrency,
+            self.props.compute_premium_queue.clone(),
+            self.props.max_concurrency,
         ))
     }
 }

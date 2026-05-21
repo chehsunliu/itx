@@ -9,8 +9,9 @@ use sqlx::PgPool;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use std::sync::Arc;
 
-#[derive(serde::Deserialize)]
-struct PostgresRepoFactoryConfig {
+#[derive(Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct PostgresRepoFactoryProps {
     pub host: String,
     pub port: u16,
     pub db_name: String,
@@ -23,17 +24,13 @@ pub struct PostgresRepoFactory {
 }
 
 impl PostgresRepoFactory {
-    pub async fn from_env() -> Result<Self, sqlx::Error> {
-        let config = envy::prefixed("ITX_POSTGRES_")
-            .from_env::<PostgresRepoFactoryConfig>()
-            .expect("failed to read Postgres environment variables");
-
+    pub async fn new(props: PostgresRepoFactoryProps) -> Result<Self, sqlx::Error> {
         let options = PgConnectOptions::new()
-            .host(&config.host)
-            .port(config.port)
-            .database(&config.db_name)
-            .username(&config.user)
-            .password(&config.password);
+            .host(&props.host)
+            .port(props.port)
+            .database(&props.db_name)
+            .username(&props.user)
+            .password(&props.password);
 
         let pool = PgPoolOptions::new().max_connections(10).connect_with(options).await?;
         Ok(Self { pool })

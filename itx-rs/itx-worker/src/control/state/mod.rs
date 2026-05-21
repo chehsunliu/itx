@@ -1,6 +1,9 @@
+mod props;
+
 use std::error::Error;
 use std::sync::Arc;
 
+use crate::control::state::props::ControlWorkerProps;
 use itx_contract::email::EmailClient;
 use itx_contract::queue::MessageQueue;
 use itx_contract::queue::factory::MessageQueueFactory;
@@ -15,15 +18,9 @@ use itx_impl::repo::mariadb::factory::MariaDbRepoFactory;
 use itx_impl::repo::postgres::factory::PostgresRepoFactory;
 use serde::Deserialize;
 
-#[derive(Clone, Deserialize)]
-pub struct ControlWorkerStateProps {
-    pub db_provider: Option<String>,
-    pub queue_provider: Option<String>,
-}
-
 #[derive(Clone)]
 pub struct ControlWorkerState {
-    pub props: ControlWorkerStateProps,
+    pub props: ControlWorkerProps,
     pub post_repo: Arc<dyn PostRepo>,
     pub user_repo: Arc<dyn UserRepo>,
     pub subscription_repo: Arc<dyn SubscriptionRepo>,
@@ -36,17 +33,15 @@ pub struct ControlWorkerState {
 
 impl ControlWorkerState {
     pub async fn from_env() -> Result<Self, Box<dyn Error>> {
-        let props = envy::prefixed("ITX_")
-            .from_env::<ControlWorkerStateProps>()
-            .expect("failed to read state props environment variables");
+        let props = ControlWorkerProps::from_env()?;
         let repo_factory: Arc<dyn RepoFactory> = match props.db_provider.as_deref().unwrap_or("postgres") {
-            "postgres" => Arc::new(PostgresRepoFactory::from_env().await?),
-            "mariadb" => Arc::new(MariaDbRepoFactory::from_env().await?),
+            "postgres" => Arc::new(PostgresRepoFactory::new(props.postgres.clone()).await?),
+            "mariadb" => Arc::new(MariaDbRepoFactory::new(props.mariadb.clone()).await?),
             other => panic!("unknown ITX_DB_PROVIDER: {other}"),
         };
         let queue_factory: Arc<dyn MessageQueueFactory> = match props.queue_provider.as_deref().unwrap_or("sqs") {
-            "sqs" => Arc::new(SqsMessageQueueFactory::from_env().await),
-            "rabbitmq" => Arc::new(RabbitMessageQueueFactory::from_env().await?),
+            "sqs" => Arc::new(SqsMessageQueueFactory::new(props.sqs.clone()).await),
+            "rabbitmq" => Arc::new(RabbitMessageQueueFactory::new(props.rabbitmq.clone()).await?),
             other => panic!("unknown ITX_QUEUE_PROVIDER: {other}"),
         };
 
