@@ -2,10 +2,10 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use clap::Parser;
+use itx_compute_worker::dispatcher::ComputeDispatcher;
+use itx_compute_worker::state::ComputeWorkerState;
 use itx_contract::queue::MessageHandler;
-use itx_worker::compute::dispatcher::ComputeDispatcher;
-use itx_worker::compute::state::ComputeWorkerState;
-use itx_worker::run::run;
+use itx_impl::worker::run::run;
 use tracing::Level;
 
 #[derive(Parser, Debug)]

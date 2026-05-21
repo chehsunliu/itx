@@ -4,7 +4,7 @@ use itx_contract::queue::message::{MessageBody, PostCreatedMessageBody};
 use itx_contract::queue::{HandlerError, MessageHandler};
 use itx_contract::repo::post::GetParams;
 
-use crate::control::state::ControlWorkerState;
+use crate::state::ControlWorkerState;
 
 pub struct ControlDispatcher {
     state: ControlWorkerState,
@@ -16,7 +16,6 @@ impl ControlDispatcher {
     }
 
     async fn handle_post_created(&self, body: PostCreatedMessageBody) -> Result<(), HandlerError> {
-        // Fetch the post (for the title) and the author (for the from-name).
         let post = self.state.post_repo.get(GetParams { id: body.post_id }).await?;
         let author = self.state.user_repo.get(body.author_id).await?;
         let subscribers = self.state.subscription_repo.list_subscribers(body.author_id).await?;
