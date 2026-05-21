@@ -3,19 +3,15 @@ mod props;
 use std::error::Error;
 use std::sync::Arc;
 
-use crate::compute::state::props::ComputeWorkerProps;
 use itx_contract::queue::MessageQueue;
 use itx_contract::queue::factory::MessageQueueFactory;
 use itx_impl::queue::rabbitmq::factory::RabbitMessageQueueFactory;
 use itx_impl::queue::sqs::factory::SqsMessageQueueFactory;
-use serde::Deserialize;
 
-#[derive(Clone, Deserialize)]
-pub struct ComputeWorkerStateProps {
-    pub queue_provider: Option<String>,
-}
+use crate::state::props::ComputeWorkerProps;
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct ComputeWorkerState {
     pub props: ComputeWorkerProps,
     pub control_standard_queue: Arc<dyn MessageQueue>,

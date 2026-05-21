@@ -1,12 +1,16 @@
+mod dispatcher;
+mod state;
+
 use std::str::FromStr;
 use std::sync::Arc;
 
 use clap::Parser;
 use itx_contract::queue::MessageHandler;
-use itx_worker::compute::dispatcher::ComputeDispatcher;
-use itx_worker::compute::state::ComputeWorkerState;
-use itx_worker::run::run;
+use itx_impl::worker::run::run;
 use tracing::Level;
+
+use crate::dispatcher::ComputeDispatcher;
+use crate::state::ComputeWorkerState;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

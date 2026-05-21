@@ -3,7 +3,6 @@ mod props;
 use std::error::Error;
 use std::sync::Arc;
 
-use crate::control::state::props::ControlWorkerProps;
 use itx_contract::email::EmailClient;
 use itx_contract::queue::MessageQueue;
 use itx_contract::queue::factory::MessageQueueFactory;
@@ -16,9 +15,11 @@ use itx_impl::queue::rabbitmq::factory::RabbitMessageQueueFactory;
 use itx_impl::queue::sqs::factory::SqsMessageQueueFactory;
 use itx_impl::repo::mariadb::factory::MariaDbRepoFactory;
 use itx_impl::repo::postgres::factory::PostgresRepoFactory;
-use serde::Deserialize;
+
+use crate::state::props::ControlWorkerProps;
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct ControlWorkerState {
     pub props: ControlWorkerProps,
     pub post_repo: Arc<dyn PostRepo>,
