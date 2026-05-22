@@ -67,7 +67,7 @@ async fn fetch_tags_for(pool: &MySqlPool, post_ids: &[PostId]) -> Result<HashMap
          WHERE pt.post_id IN ({placeholders}) \
          ORDER BY t.name"
     );
-    let mut q = sqlx::query_as::<_, (PostId, String)>(&sql);
+    let mut q = sqlx::query_as::<_, (PostId, String)>(sqlx::AssertSqlSafe(sql));
     for pid in post_ids {
         q = q.bind(pid);
     }
