@@ -9,7 +9,7 @@ require (
 	github.com/chehsunliu/itx/itx-go/itx-contract v0.0.0
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.9.2
+	github.com/jackc/pgx/v5 v5.10.0
 	github.com/rabbitmq/amqp091-go v1.11.0
 	golang.org/x/sync v0.20.0
 )
