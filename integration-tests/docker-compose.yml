@@ -30,7 +30,7 @@ services:
       - "migrate"
 
   mariadb:
-    image: mariadb:12.3@sha256:b1c7bf836e64ed9406a8984af29509f40089d55cea14b32f12c4726a1f17104b
+    image: mariadb:12.3@sha256:628f228f0fd5913a220438693576b29b6fe4dc1fa0a1298c0e98579fae28635f
     restart: always
     ports:
       - "127.0.0.1:0:3306"
@@ -81,7 +81,7 @@ services:
       - sqs
 
   rabbitmq:
-    image: rabbitmq:4-management-alpine@sha256:e6862a7d804c80fc72d2265aed3b725fd9a6afd330b735363eeecc4b6ec4dd3d
+    image: rabbitmq:4-management-alpine@sha256:4c826054a20e917bca5ada86225329a97585ee393300439c0d9b46ece45977cb
     restart: always
     ports:
       - "127.0.0.1:0:5672"
