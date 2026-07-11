@@ -69,7 +69,7 @@ jobs:
 
       - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
 
-      - uses: taiki-e/install-action@3a7f9c7e491f886d38a27cc2e084e2d9218068c6 # cargo-llvm-cov
+      - uses: taiki-e/install-action@e28ac56891501ddb0600608470dbe94544964ed4 # cargo-llvm-cov
 
       - name: Set Rust caching env vars
         if: env.IS_COVERAGE_RUN == 'false'
