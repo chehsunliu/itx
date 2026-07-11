@@ -57,7 +57,7 @@ jobs:
         with:
           python-version: 3.14
 
-      - uses: astral-sh/setup-uv@f98e06938123ccabd21905ea5d0069192241f9f1 # v8.3.1
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
 
       - name: Install Python dependencies
         run: uv sync
@@ -69,7 +69,7 @@ jobs:
 
       - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
 
-      - uses: taiki-e/install-action@5e1127e8d025a0bf2f008ec24aae25dcd8828e12 # cargo-llvm-cov
+      - uses: taiki-e/install-action@e28ac56891501ddb0600608470dbe94544964ed4 # cargo-llvm-cov
 
       - name: Set Rust caching env vars
         if: env.IS_COVERAGE_RUN == 'false'
@@ -146,7 +146,7 @@ jobs:
         with:
           python-version: 3.14
 
-      - uses: astral-sh/setup-uv@f98e06938123ccabd21905ea5d0069192241f9f1 # v8.3.1
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
 
       - name: Install Python dependencies
         run: uv sync
