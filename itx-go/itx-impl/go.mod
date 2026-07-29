@@ -5,7 +5,7 @@ go 1.25.4
 require (
 	github.com/aws/aws-sdk-go-v2 v1.43.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.32
-	github.com/aws/aws-sdk-go-v2/service/sqs v1.46.0
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.46.1
 	github.com/chehsunliu/itx/itx-go/itx-contract v0.0.0
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/google/uuid v1.6.0
