@@ -13,7 +13,7 @@ services:
       - "log_statement=all"
 
   postgres-init:
-    image: flyway/flyway:12-alpine@sha256:4c86b41ecf0010c730609cd79d025aa8ef619888906e8b689b0529891ca9930d
+    image: flyway/flyway:13-alpine@sha256:0ac8d526acfaa11bef99926cabf9d7247d2469e488aded8e3b86ec380bb76e83
     depends_on:
       - postgres
     restart: on-failure
@@ -30,7 +30,7 @@ services:
       - "migrate"
 
   mariadb:
-    image: mariadb:12.3@sha256:628f228f0fd5913a220438693576b29b6fe4dc1fa0a1298c0e98579fae28635f
+    image: mariadb:12.3@sha256:759869cb6f003234a95c6384cdee245b4bce7de26913fe607a8110362c0c007d
     restart: always
     ports:
       - "127.0.0.1:0:3306"
@@ -44,7 +44,7 @@ services:
       - "--general-log-file=/var/log/mysql/general.log"
 
   mariadb-init:
-    image: flyway/flyway:12-alpine@sha256:4c86b41ecf0010c730609cd79d025aa8ef619888906e8b689b0529891ca9930d
+    image: flyway/flyway:13-alpine@sha256:0ac8d526acfaa11bef99926cabf9d7247d2469e488aded8e3b86ec380bb76e83
     depends_on:
       - mariadb
     restart: on-failure
@@ -81,7 +81,7 @@ services:
       - sqs
 
   rabbitmq:
-    image: rabbitmq:4-management-alpine@sha256:0753b75ce99094c385483d89449d532a0544fb85e4942a478b21cc497ab66d33
+    image: rabbitmq:4-management-alpine@sha256:cd624335f752f704e768239ea21501e5771ca13b3b278520da5ad1076eb86e55
     restart: always
     ports:
       - "127.0.0.1:0:5672"
