@@ -13,7 +13,7 @@ services:
       - "log_statement=all"
 
   postgres-init:
-    image: flyway/flyway:13-alpine@sha256:476141dceea509c7290fa259fc8974fcc86e47d734609bac9d72fe5218853a43
+    image: flyway/flyway:13-alpine@sha256:dcad8c121602c482eea1569de04318c3b5831eafcc9347119a7726a283b2b77a
     depends_on:
       - postgres
     restart: on-failure
@@ -44,7 +44,7 @@ services:
       - "--general-log-file=/var/log/mysql/general.log"
 
   mariadb-init:
-    image: flyway/flyway:13-alpine@sha256:476141dceea509c7290fa259fc8974fcc86e47d734609bac9d72fe5218853a43
+    image: flyway/flyway:13-alpine@sha256:dcad8c121602c482eea1569de04318c3b5831eafcc9347119a7726a283b2b77a
     depends_on:
       - mariadb
     restart: on-failure
