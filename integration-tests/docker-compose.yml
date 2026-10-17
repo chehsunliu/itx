@@ -30,7 +30,7 @@ services:
       - "migrate"
 
   mariadb:
-    image: mariadb:12.3@sha256:faae028e4d73efc946526ae1d5ba57181d4f162d64e60b6482c85095da31a084
+    image: mariadb:13.0@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
     restart: always
     ports:
       - "127.0.0.1:0:3306"
