@@ -81,7 +81,7 @@ services:
       - sqs
 
   rabbitmq:
-    image: rabbitmq:4-management-alpine@sha256:3505b6096cdbc083bcc363e74366f575ecd0c1a55be4dadcbc60fa08e34647e1
+    image: rabbitmq:4-management-alpine@sha256:0452ee3fd3b9a74160b251e693338616b464f22df4d4ba43304c101bebdca292
     restart: always
     ports:
       - "127.0.0.1:0:5672"
